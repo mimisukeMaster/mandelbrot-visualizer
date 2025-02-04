@@ -1,17 +1,19 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
-from threading import Thread
+from matplotlib.widgets import RectangleSelector
+from threading import Timer
 
 # 描画範囲
 xmin, xmax, ymin, ymax = -2.0, 1.0, -1.5, 1.5
+debounce_timer = None  # タイマーを管理する変数
 
 def mandelbrot(c, max_iter):
     z = 0
     for n in range(max_iter):
         if abs(z) > 2:
             return n + 1 - np.log(np.log2(abs(z)))  # スムーズなグラデーションのためにスケーリング
-        z = z * z + c
+        z = z*z + c
     return max_iter
 
 def generate_mandelbrot(xmin, xmax, ymin, ymax, width, height, max_iter):
@@ -32,25 +34,35 @@ def create_colormap():
     cmap = mcolors.LinearSegmentedColormap.from_list('custom_cmap', colors, N=256)
     return cmap
 
-def update_image():
-    global img_plot, ax, fig, xmin, xmax, ymin, ymax
+def on_range_change(xmin_new, xmax_new, ymin_new, ymax_new):
+    global xmin, xmax, ymin, ymax, ax, img_plot
 
+    # 新しい表示範囲を取得
+    xmin, xmax = xmin_new, xmax_new
+    ymin, ymax = ymin_new, ymax_new
+
+    # マンデルブロ集合を再計算
     new_img = generate_mandelbrot(xmin, xmax, ymin, ymax, 800, 800, 200)
 
-    img_plot.set_data(new_img)
-    img_plot.set_extent((xmin, xmax, ymin, ymax))
+    # 画像データを更新
+    img_plot.set_array(new_img)
     
+    # 表示範囲を更新
+    img_plot.set_extent((xmin, xmax, ymin, ymax))
+    ax.set_xlim(xmin, xmax)
+    ax.set_ylim(ymin, ymax)
+
+    # 再描画
     fig.canvas.draw_idle()
 
-def on_range_change(event):
-    global xmin, xmax, ymin, ymax, ax
+def delayed_on_range_change(event_ax):
+    global debounce_timer
+    if debounce_timer is not None:
+        debounce_timer.cancel()  # 既存のタイマーをキャンセル
 
-    xmin, xmax = ax.get_xlim()
-    ymin, ymax = ax.get_ylim()
-
-    # 画像更新処理をスレッドで非同期に実行
-    thread = Thread(target=update_image)
-    thread.start()
+    # 新たにタイマーをセット (500ms後に実行)
+    debounce_timer = Timer(0.5, on_range_change, [event_ax.get_xlim()[0], event_ax.get_xlim()[1], event_ax.get_ylim()[0], event_ax.get_ylim()[1]])
+    debounce_timer.start()
 
 def main():
     global fig, ax, img_plot
@@ -72,9 +84,9 @@ def main():
     ax.set_ylabel("Im")
     fig.colorbar(img_plot, label='Iterations')
 
-    # 拡大されたら再描画関数を呼ぶ
-    ax.callbacks.connect('xlim_changed', on_range_change)
-    ax.callbacks.connect('ylim_changed', on_range_change)
+    # 範囲変更時のイベントを設定
+    ax.callbacks.connect('xlim_changed', delayed_on_range_change)
+    ax.callbacks.connect('ylim_changed', delayed_on_range_change)
 
     plt.show()
 
