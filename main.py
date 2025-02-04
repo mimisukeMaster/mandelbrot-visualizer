@@ -3,8 +3,11 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 from concurrent.futures import ProcessPoolExecutor
 
-# 描画範囲
-xmin, xmax, ymin, ymax = -2.0, 1.0, -1.5, 1.5
+#####
+# 精度設定
+width, height = 800, 800 # 縦横の幅をこの値で分割
+max_iter = 200
+#####
 
 def mandelbrot(c, max_iter):
     z = 0
@@ -33,7 +36,6 @@ def create_colormap():
     return cmap
 
 def update_plot(future, new_bounds):
-    """バックグラウンドスレッドから描画を更新"""
     global ax, img_plot, fig
     new_xmin, new_xmax, new_ymin, new_ymax = new_bounds
     new_img = future.result()
@@ -47,30 +49,25 @@ def update_plot(future, new_bounds):
     # 再描画
     fig.canvas.draw_idle()
 
-def on_mouse_release(event, width=800, height=800, max_iter=200):
+def on_mouse_release(event, width=width, height=height, max_iter=max_iter):
     global xmin, xmax, ymin, ymax, executor
     
     if event.inaxes != ax:  # グラフ内でのイベントでない場合は無視
         return
 
     # 新しい表示範囲を取得
-    new_xmin, new_xmax = ax.get_xlim()
-    new_ymin, new_ymax = ax.get_ylim()
+    xmin, xmax = ax.get_xlim()
+    ymin, ymax = ax.get_ylim()
 
     # バックグラウンドでマンデルブロ集合を再計算
-    future = executor.submit(generate_mandelbrot, new_xmin, new_xmax, new_ymin, new_ymax, width, height, max_iter)
-    future.add_done_callback(lambda fut: update_plot(fut, (new_xmin, new_xmax, new_ymin, new_ymax)))
-
-    # グローバル変数を更新
-    xmin, xmax = new_xmin, new_xmax
-    ymin, ymax = new_ymin, new_ymax
+    future = executor.submit(generate_mandelbrot, xmin, xmax, ymin, ymax, width, height, max_iter)
+    future.add_done_callback(lambda fut: update_plot(fut, (xmin, xmax, ymin, ymax)))
 
 def main():
-    global fig, ax, img_plot, executor
+    global width, height, max_iter, fig, ax, img_plot, executor
 
-    # 計算する粒度 縦横の幅をこの値で分割
-    width, height = 800, 800
-    max_iter = 200
+    # 描画範囲
+    xmin, xmax, ymin, ymax = -2.0, 1.0, -1.5, 1.5
 
     # 初回のマンデルブロ集合を計算
     img = generate_mandelbrot(xmin, xmax, ymin, ymax, width, height, max_iter)
