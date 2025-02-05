@@ -12,6 +12,12 @@ numpy==2.2.2
 matplotlib==3.10.0
 ```
 
+## directory
+### mandelbrot.py
+メインのスクリプトです。`matplotlib`でマンデルブロ集合を描画し、拡大操作が行えます。
+### mandelbrot_gpu.py
+同じ処理を、GPUベースで動かせるようにしたプログラムです。こちらは開発中です。
+
 ## author
 みみすけ名人
 
@@ -20,4 +26,4 @@ matplotlib==3.10.0
 [<img src="https://img.shields.io/badge/-Youtube-youtube.svg?&style=flat-square&logo=youtube&logoColor=white&color=red">](https://www.youtube.com/channel/UCWnmp8t4GJzcjBxhtgo9rKQ)
 
 ## license
-AI-VOICEVOX is under [MIT](LICENSE) license.
+mandelbrot-visualizer is under [MIT](LICENSE) license.
