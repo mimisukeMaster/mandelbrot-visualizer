@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 from concurrent.futures import ProcessPoolExecutor # 並列計算用
+import gc
 
 # 精度設定
 width, height = 800, 800
@@ -70,6 +71,9 @@ def update_plot(future, new_xmin, new_xmax, new_ymin, new_ymax):
     # 再描画
     fig.canvas.draw_idle()
 
+    # メモリリーク回避
+    gc.collect()
+
 # 拡大操作時
 def on_mouse_release(event, width=width, height=height, max_iter=max_iter):
     global xmin, xmax, ymin, ymax, executor
@@ -109,15 +113,15 @@ def main():
     fig, ax = plt.subplots(figsize=(10, 10))
     
     # 二次元配列から画像の描画
-    img_plot = ax.imshow(img, extent=(xmin, xmax, ymin, ymax), cmap=cmap, origin='lower', vmin=1, aspect='auto')
+    img_plot = ax.imshow(img, extent=(xmin, xmax, ymin, ymax), cmap=cmap, origin='lower', vmin=1)
     
     ax.set_title("Mandelbrot Set")
     ax.set_xlabel("Re")
     ax.set_ylabel("Im")
     fig.colorbar(img_plot, label='Iterations')
 
-    # プロセスプールを作成し最大4つの並列処理枠を用意
-    executor = ProcessPoolExecutor(max_workers=4)
+    # プロセスプールを作成し最大8つの並列処理枠を用意
+    executor = ProcessPoolExecutor(max_workers=8)
 
     # マウスボタンが離されたときのイベントを設定
     fig.canvas.mpl_connect('button_release_event', on_mouse_release)
