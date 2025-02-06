@@ -20,24 +20,24 @@ def main():
 
     # 描画セットアップ
     cmap = create_colormap()
-    cmap.set_under('black')
+    cmap.set_under("black")
     
     # 画像と軸の作成
     fig, ax = plt.subplots(figsize=(10, 10))
     
     # 二次元配列から画像の描画
-    img_plot = ax.imshow(img, extent=(xmin, xmax, ymin, ymax), cmap=cmap, origin='lower', vmin=1)
+    img_plot = ax.imshow(img, extent=(xmin, xmax, ymin, ymax), cmap=cmap, origin="lower", vmin=1)
     
     ax.set_title("Mandelbrot Set")
     ax.set_xlabel("Re")
     ax.set_ylabel("Im")
-    fig.colorbar(img_plot, label='Iterations')
+    fig.colorbar(img_plot, label="Iterations")
 
     # プロセスプールを作成し最大8つの並列処理枠を用意
     executor = ProcessPoolExecutor(max_workers=8)
 
     # マウスボタンが離されたときのイベントを設定
-    fig.canvas.mpl_connect('button_release_event', on_mouse_release)
+    fig.canvas.mpl_connect("button_release_event", on_mouse_release)
 
     plt.show()
 
@@ -89,15 +89,17 @@ def mandelbrot(c, max_iter):
     return max_iter
 
 
-# カラーマップ
 def create_colormap():
+    """
+    カラーマップ作成
+    """
     colors = [(0, 0, 1), (0, 1, 1), (0, 1, 0), (1, 1, 0), (1, 0, 0), (1, 0, 1)]
     
     # リストから256色の線形カラーマップを生成
-    cmap = mcolors.LinearSegmentedColormap.from_list('custom_cmap', colors, N=256)
+    cmap = mcolors.LinearSegmentedColormap.from_list("custom_cmap", colors, N=256)
     return cmap
 
-# 拡大操作時
+
 def on_mouse_release(event, width=width, height=height, max_iter=max_iter):
     """
     拡大操作時
@@ -122,7 +124,7 @@ def on_mouse_release(event, width=width, height=height, max_iter=max_iter):
 def execute_callback(fut):
     return update_plot(fut, xmin, xmax, ymin, ymax)
 
-# プロット更新
+
 def update_plot(future, new_xmin, new_xmax, new_ymin, new_ymax):
     """
     プロットの更新

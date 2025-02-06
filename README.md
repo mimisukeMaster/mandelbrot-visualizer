@@ -15,8 +15,6 @@ matplotlib==3.10.0
 ## directory
 ### mandelbrot.py
 メインのスクリプトです。`matplotlib`でマンデルブロ集合を描画し、拡大操作が行えます。
-### mandelbrot_gpu.py
-同じ処理を、GPUベースで動かせるようにしたプログラムです。こちらは開発中です。
 
 ## author
 みみすけ名人
