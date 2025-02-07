@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
-from concurrent.futures import ProcessPoolExecutor # 並列計算用
+from joblib import Parallel, delayed # 並列計算用
 import gc
 
 # 精度設定
@@ -33,9 +33,6 @@ def main():
     ax.set_ylabel("Im")
     fig.colorbar(img_plot, label="Iterations")
 
-    # プロセスプールを作成し最大8つの並列処理枠を用意
-    executor = ProcessPoolExecutor(max_workers=8)
-
     # マウスボタンが離されたときのイベントを設定
     fig.canvas.mpl_connect("button_release_event", on_mouse_release)
 
@@ -56,17 +53,31 @@ def generate_mandelbrot(xmin, xmax, ymin, ymax, width, height, max_iter):
     # [width] * height 個の空の二次元配列を用意
     img = np.zeros((height, width))
     
+    def compute_plot(i, j):
+        
+        # 複素数を作成
+        c = complex(x[j], y[i])
+
+        # プロットを計算
+        iter_count = mandelbrot(c, max_iter)
+
+        # 発散なら補正付き計算回数、収束なら0を格納
+        return iter_count if iter_count < max_iter else 0
+
+    # 各プロット(i, j)に対する計算タスクを追加
+    tasks = []
     for i in range(height):
         for j in range(width):
+            task = delayed(compute_plot)(i, j)
+            tasks.append(task)
 
-            # 複素数を作成
-            c = complex(x[j], y[i])
-            
-            # プロットを計算
-            iter_count = mandelbrot(c, max_iter)
-            
-            # 発散なら補正付き計算回数、収束なら0を格納
-            img[i, j] = iter_count if iter_count < max_iter else 0
+    # タスクを実行して並列計算をし結果を取得
+    results = Parallel(n_jobs=8)(tasks)
+    
+    # 二次元配列に結果を配置
+    for i in range(height):
+        for j in range(width):
+            img[i, j] = results[i * width + j]
     
     return img
 
@@ -114,18 +125,11 @@ def on_mouse_release(event, width=width, height=height, max_iter=max_iter):
     xmin, xmax = ax.get_xlim()
     ymin, ymax = ax.get_ylim()
 
-    # 並列で再計算する関数を実行
-    future = executor.submit(generate_mandelbrot, xmin, xmax, ymin, ymax, width, height, max_iter)
-    
-    # 並列の計算が全て完了した時に実行する関数オブジェクトを登録
-    # futureは関数オブジェクトの引数として自動的に代入される
-    future.add_done_callback(execute_callback)
+    # 再計算する
+    new_img = generate_mandelbrot(xmin, xmax, ymin, ymax, width, height, max_iter)
+    update_plot(new_img, xmin, xmax, ymin, ymax)
 
-def execute_callback(fut):
-    return update_plot(fut, xmin, xmax, ymin, ymax)
-
-
-def update_plot(future, new_xmin, new_xmax, new_ymin, new_ymax):
+def update_plot(new_img, new_xmin, new_xmax, new_ymin, new_ymax):
     """
     プロットの更新
 
@@ -134,9 +138,6 @@ def update_plot(future, new_xmin, new_xmax, new_ymin, new_ymax):
         他: 新しい画像の範囲
     """
     global ax, img_plot, fig
-
-    # 並列計算結果を取得
-    new_img = future.result()
     
     # 新しい画像データを設定
     img_plot.set_data(new_img)
