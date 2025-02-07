@@ -2,7 +2,7 @@
 <img src="sample.gif">
 
 ## description
-pythonのmatplotlibを使い、マンデルブロ集合を可視化するプログラムです。matplotlibウィンドウ上で拡大操作を行うと、その範囲で再計算が行われ再描画できます。
+pythonのmatplotlibを使い、マンデルブロ集合を可視化するプログラムです。matplotlibウィンドウ上で拡大操作を行うと、その範囲で計算が行われ再描画されます。
 
 ## requirements
 自機の環境
@@ -10,6 +10,7 @@ pythonのmatplotlibを使い、マンデルブロ集合を可視化するプロ�
 python==3.11.7
 numpy==2.2.2
 matplotlib==3.10.0
+joblib==1.4.2  
 ```
 
 ## directory
