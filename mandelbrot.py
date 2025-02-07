@@ -10,13 +10,13 @@ max_iter = 200
 
 
 def main():
-    global width, height, max_iter, fig, ax, img_plot, executor
+    global width, height, max_iter, fig, ax, img_plot
 
     # 描画範囲
     xmin, xmax, ymin, ymax = -2.0, 1.0, -1.5, 1.5
 
     # 初回の計算
-    img = generate_mandelbrot(xmin, xmax, ymin, ymax, width, height, max_iter)
+    img = mandelbrot(xmin, xmax, ymin, ymax, width, height, max_iter)
 
     # 描画セットアップ
     cmap = create_colormap()
@@ -39,7 +39,7 @@ def main():
     plt.show()
 
 
-def generate_mandelbrot(xmin, xmax, ymin, ymax, width, height, max_iter):
+def mandelbrot(xmin, xmax, ymin, ymax, width, height, max_iter):
     """
     指定範囲でマンデルブロ集合を計算
 
@@ -53,22 +53,20 @@ def generate_mandelbrot(xmin, xmax, ymin, ymax, width, height, max_iter):
     # [width] * height 個の空の二次元配列を用意
     img = np.zeros((height, width))
     
-    def compute_plot(i, j):
+    def plot_state(i, j):
         
-        # 複素数を作成
+        # プロットを作成し計算
         c = complex(x[j], y[i])
+        iter_count = compute_plot(c, max_iter)
 
-        # プロットを計算
-        iter_count = mandelbrot(c, max_iter)
-
-        # 発散なら補正付き計算回数、収束なら0を格納
+        # 発散なら補正付き反復回数 収束なら0
         return iter_count if iter_count < max_iter else 0
 
     # 各プロット(i, j)に対する計算タスクを追加
     tasks = []
     for i in range(height):
         for j in range(width):
-            task = delayed(compute_plot)(i, j)
+            task = delayed(plot_state)(i, j)
             tasks.append(task)
 
     # タスクを実行して並列計算をし結果を取得
@@ -82,13 +80,12 @@ def generate_mandelbrot(xmin, xmax, ymin, ymax, width, height, max_iter):
     return img
 
 
-def mandelbrot(c, max_iter):
+def compute_plot(c, max_iter):
     """
-    各プロットを計算
+    指定されたプロットを計算
 
     Returns:
-        発散時: 発散の度合いを表す数値
-        収束時: max_iter
+        発散の度合いを表す数値 または max_iter
     """
     z = 0
     for n in range(max_iter):
@@ -126,7 +123,7 @@ def on_mouse_release(event, width=width, height=height, max_iter=max_iter):
     ymin, ymax = ax.get_ylim()
 
     # 再計算する
-    new_img = generate_mandelbrot(xmin, xmax, ymin, ymax, width, height, max_iter)
+    new_img = mandelbrot(xmin, xmax, ymin, ymax, width, height, max_iter)
     update_plot(new_img, xmin, xmax, ymin, ymax)
 
 def update_plot(new_img, new_xmin, new_xmax, new_ymin, new_ymax):
